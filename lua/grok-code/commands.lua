@@ -28,9 +28,6 @@ function M.register_commands(grok_code)
   end, { desc = "Resume Grok session picker" })
 
   cmd("GrokCodeInstallHelp", function()
-    local term = require("grok-code.terminal")
-    -- reuse the prompt logic by forcing a fake toggle that will hit the guard
-    -- simpler: just show it directly
     local cfg = grok_code.config or require("grok-code.config").default_config
     local lines = {
       "Grok Build CLI (grok) install instructions:",

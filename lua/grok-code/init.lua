@@ -85,8 +85,6 @@ end
 -- We append text (e.g. @file references) into the terminal's input.
 ----------------------------------------------------------
 
-local terminal_mod = require("grok-code.terminal")
-
 --- Find a buffer that looks like a grok terminal.
 --- Prefers instances tracked by the managed toggle, falls back to any terminal
 --- whose buffer name contains "grok".
@@ -134,7 +132,7 @@ local function get_relative_file()
     return nil
   end
   local git_root = require("grok-code.git").get_git_root() or vim.fn.getcwd()
-  local rel = abs
+  local rel
   if git_root and abs:sub(1, #git_root) == git_root then
     rel = abs:sub(#git_root + 2)
   else

@@ -185,7 +185,7 @@ local function show_install_prompt(config)
 
     local w = math.max(60, math.min(80, vim.o.columns - 10))
     local h = #lines + 2
-    local win = vim.api.nvim_open_win(buf, true, {
+    vim.api.nvim_open_win(buf, true, {
       relative = "editor",
       width = w,
       height = h,

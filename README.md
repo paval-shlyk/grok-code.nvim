@@ -30,6 +30,9 @@ It does **not** try to emulate or replace the Grok TUI — it simply launches th
 
 ## Installation / Integration into Neovim
 
+**Requirements:** Neovim ≥ 0.12 (developed and tested on 0.12.2).  
+The plugin may work on older versions (0.10+), but these are not officially supported or tested.
+
 This plugin is a simple Lua module. Install it with your preferred plugin manager or manually.
 
 **Tested with:** vim.pack. 
