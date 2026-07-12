@@ -21,17 +21,17 @@
 ---   :GrokCodeInstallHelp
 ---@brief ]]
 
-local config_mod = require('grok-code.config')
-local commands = require('grok-code.commands')
-local keymaps = require('grok-code.keymaps')
-local file_refresh = require('grok-code.file_refresh')
-local terminal = require('grok-code.terminal')
-local git = require('grok-code.git')
+local config_mod = require("grok-code.config")
+local commands = require("grok-code.commands")
+local keymaps = require("grok-code.keymaps")
+local file_refresh = require("grok-code.file_refresh")
+local terminal = require("grok-code.terminal")
+local git = require("grok-code.git")
 
 local M = {}
 
 M.config = {}
-M.grok_code = terminal.terminal   -- for compatibility with some patterns
+M.grok_code = terminal.terminal -- for compatibility with some patterns
 
 function M.force_insert_mode()
   terminal.force_insert_mode(M, M.config)
@@ -76,7 +76,7 @@ end
 
 -- For health checks or introspection
 M._has_grok = function()
-  return vim.fn.executable('grok') == 1
+  return vim.fn.executable("grok") == 1
 end
 
 ----------------------------------------------------------
@@ -85,7 +85,7 @@ end
 -- We append text (e.g. @file references) into the terminal's input.
 ----------------------------------------------------------
 
-local terminal_mod = require('grok-code.terminal')
+local terminal_mod = require("grok-code.terminal")
 
 --- Find a buffer that looks like a grok terminal.
 --- Prefers instances tracked by the managed toggle, falls back to any terminal
@@ -93,9 +93,9 @@ local terminal_mod = require('grok-code.terminal')
 local function find_grok_buf()
   -- If current buffer is already a grok terminal, use it (great for raw usage)
   local cur = vim.api.nvim_get_current_buf()
-  if vim.api.nvim_buf_get_option(cur, 'buftype') == 'terminal' then
+  if vim.api.nvim_buf_get_option(cur, "buftype") == "terminal" then
     local name = vim.api.nvim_buf_get_name(cur):lower()
-    if name:match('grok') then
+    if name:match("grok") then
       return cur
     end
   end
@@ -104,11 +104,11 @@ local function find_grok_buf()
   if M.grok_code and M.grok_code.instances then
     local current = M.grok_code.current_instance
     local b = current and M.grok_code.instances[current]
-    if b and vim.api.nvim_buf_is_valid(b) and vim.api.nvim_buf_get_option(b, 'buftype') == 'terminal' then
+    if b and vim.api.nvim_buf_is_valid(b) and vim.api.nvim_buf_get_option(b, "buftype") == "terminal" then
       return b
     end
     for _, bufnr in pairs(M.grok_code.instances) do
-      if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_option(bufnr, 'buftype') == 'terminal' then
+      if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_option(bufnr, "buftype") == "terminal" then
         return bufnr
       end
     end
@@ -118,9 +118,9 @@ local function find_grok_buf()
   -- (supports manually opened terminals with `grok` or the raw `:Grok` launcher)
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     local bufnr = vim.api.nvim_win_get_buf(win)
-    if vim.api.nvim_buf_get_option(bufnr, 'buftype') == 'terminal' then
+    if vim.api.nvim_buf_get_option(bufnr, "buftype") == "terminal" then
       local name = vim.api.nvim_buf_get_name(bufnr):lower()
-      if name:match('grok') then
+      if name:match("grok") then
         return bufnr
       end
     end
@@ -130,13 +130,15 @@ end
 
 local function get_relative_file()
   local abs = vim.api.nvim_buf_get_name(0)
-  if abs == '' then return nil end
-  local git_root = require('grok-code.git').get_git_root() or vim.fn.getcwd()
+  if abs == "" then
+    return nil
+  end
+  local git_root = require("grok-code.git").get_git_root() or vim.fn.getcwd()
   local rel = abs
   if git_root and abs:sub(1, #git_root) == git_root then
     rel = abs:sub(#git_root + 2)
   else
-    rel = vim.fn.fnamemodify(abs, ':.')
+    rel = vim.fn.fnamemodify(abs, ":.")
   end
   return rel
 end
@@ -148,27 +150,27 @@ function M.send(text, opts)
   opts = opts or {}
   local bufnr = find_grok_buf()
   if not bufnr then
-    vim.notify('No grok terminal found. Open with :Grok or cvg', vim.log.levels.WARN)
+    vim.notify("No grok terminal found. Open with :Grok or cvg", vim.log.levels.WARN)
     return false
   end
 
   local job = vim.b[bufnr] and vim.b[bufnr].terminal_job_id
   if not job then
-    vim.notify('Grok terminal buffer has no active job', vim.log.levels.ERROR)
+    vim.notify("Grok terminal buffer has no active job", vim.log.levels.ERROR)
     return false
   end
 
   vim.fn.chansend(job, text)
 
   if opts.submit then
-    vim.fn.chansend(job, '\r')
+    vim.fn.chansend(job, "\r")
   end
 
   if opts.focus ~= false then
     local wins = vim.fn.win_findbuf(bufnr)
     if #wins > 0 then
       vim.api.nvim_set_current_win(wins[1])
-      pcall(vim.cmd, 'startinsert')
+      pcall(vim.cmd, "startinsert")
     end
   end
   return true
@@ -178,10 +180,10 @@ end
 function M.send_file_ref()
   local path = get_relative_file()
   if not path then
-    vim.notify('No current file', vim.log.levels.WARN)
+    vim.notify("No current file", vim.log.levels.WARN)
     return
   end
-  M.send('@' .. path, { focus = true })
+  M.send("@" .. path, { focus = true })
 end
 
 --- Send a range reference like @path/to/file:10-25 or @path/to/file:42 (single line collapsed)
@@ -192,7 +194,7 @@ end
 function M.send_range_ref(start_line, end_line)
   local path = get_relative_file()
   if not path then
-    vim.notify('No current file', vim.log.levels.WARN)
+    vim.notify("No current file", vim.log.levels.WARN)
     return
   end
 
@@ -200,10 +202,10 @@ function M.send_range_ref(start_line, end_line)
     -- When called without args (e.g. from :GrokSendRangeRef or other),
     -- try to capture the current visual selection if we're in one.
     local mode = vim.fn.mode()
-    if mode:match('^[vV\x16]') then
+    if mode:match("^[vV\x16]") then
       -- Live visual selection: 'v' is the other end, '.' is cursor.
-      start_line = vim.fn.line('v')
-      end_line = vim.fn.line('.')
+      start_line = vim.fn.line("v")
+      end_line = vim.fn.line(".")
     else
       -- Not in visual: fall back to last visual selection marks.
       -- These may be from a previous selection.
@@ -211,14 +213,14 @@ function M.send_range_ref(start_line, end_line)
       end_line = vim.fn.line("'>")
 
       if (not start_line or start_line == 0) and (not end_line or end_line == 0) then
-        start_line = vim.fn.line('.')
+        start_line = vim.fn.line(".")
         end_line = start_line
       end
     end
   end
 
   if not start_line or start_line == 0 then
-    start_line = vim.fn.line('.')
+    start_line = vim.fn.line(".")
     end_line = start_line
   end
 
@@ -230,51 +232,61 @@ function M.send_range_ref(start_line, end_line)
   -- Collapse to single-line format when range is only one line
   local ref
   if start_line == end_line then
-    ref = string.format('@%s:%d', path, start_line)
+    ref = string.format("@%s:%d", path, start_line)
   else
-    ref = string.format('@%s:%d-%d', path, start_line, end_line)
+    ref = string.format("@%s:%d-%d", path, start_line, end_line)
   end
   M.send(ref, { focus = true })
 end
 
 --- Send current line reference @path:42
 function M.send_line_ref()
-  local l = vim.fn.line('.')
+  local l = vim.fn.line(".")
   local path = get_relative_file()
   if not path then
-    vim.notify('No current file', vim.log.levels.WARN)
+    vim.notify("No current file", vim.log.levels.WARN)
     return
   end
-  M.send(string.format('@%s:%d', path, l), { focus = true })
+  M.send(string.format("@%s:%d", path, l), { focus = true })
 end
 
 --- Open a picker of ready-to-use actions / prompts (similar to opencode's select).
 --- These are predefined prompts. We append relevant @file context and send to the grok terminal.
 function M.select()
   local path = get_relative_file()
-  local ref = path and ('@' .. path) or ''
+  local ref = path and ("@" .. path) or ""
 
   local items = {
-    { label = 'Explain',          text = 'Explain this code and its context. Be thorough about the logic.' },
-    { label = 'Fix issues',       text = 'Find and fix any bugs or problems in this code. Explain the fix.' },
-    { label = 'Review',           text = 'Review this code for correctness, style, performance, and best practices.' },
-    { label = 'Add tests',        text = 'Write good unit/integration tests for this code.' },
-    { label = 'Optimize',         text = 'Optimize this code for performance and readability. Show before/after.' },
-    { label = 'Document',         text = 'Add clear documentation, comments, and docstrings where missing.' },
-    { label = 'Refactor',         text = 'Suggest a clean refactor of this code with explanations.' },
-    { label = 'Find bugs',        text = 'Analyze for potential bugs, edge cases, and security issues.' },
-    { label = 'Implement feature from comment', text = 'Implement the TODO or feature described in the code comments.' },
+    { label = "Explain", text = "Explain this code and its context. Be thorough about the logic." },
+    { label = "Fix issues", text = "Find and fix any bugs or problems in this code. Explain the fix." },
+    {
+      label = "Review",
+      text = "Review this code for correctness, style, performance, and best practices.",
+    },
+    { label = "Add tests", text = "Write good unit/integration tests for this code." },
+    { label = "Optimize", text = "Optimize this code for performance and readability. Show before/after." },
+    { label = "Document", text = "Add clear documentation, comments, and docstrings where missing." },
+    { label = "Refactor", text = "Suggest a clean refactor of this code with explanations." },
+    { label = "Find bugs", text = "Analyze for potential bugs, edge cases, and security issues." },
+    {
+      label = "Implement feature from comment",
+      text = "Implement the TODO or feature described in the code comments.",
+    },
   }
 
   vim.ui.select(items, {
-    prompt = 'Grok action (will be sent to terminal):',
-    format_item = function(item) return item.label end,
+    prompt = "Grok action (will be sent to terminal):",
+    format_item = function(item)
+      return item.label
+    end,
   }, function(choice)
-    if not choice then return end
+    if not choice then
+      return
+    end
     local prompt = choice.text
-    if ref ~= '' then
+    if ref ~= "" then
       -- Prepend or append context reference so grok knows what we're talking about.
-      prompt = prompt .. ' ' .. ref
+      prompt = prompt .. " " .. ref
     end
     -- Submit the full prompt
     M.send(prompt, { submit = true, focus = true })
@@ -283,10 +295,12 @@ end
 
 -- Also expose a command-friendly version
 M.send_prompt = function(prompt)
-  if not prompt or prompt == '' then return end
+  if not prompt or prompt == "" then
+    return
+  end
   local path = get_relative_file()
-  if path and not prompt:match('@') then
-    prompt = prompt .. ' @' .. path
+  if path and not prompt:match("@") then
+    prompt = prompt .. " @" .. path
   end
   M.send(prompt, { submit = true, focus = true })
 end
